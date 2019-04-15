@@ -1,0 +1,4 @@
+﻿  main.cpp
+C:\Users\aass98998\source\repos\mySIM\mySIM\fft.h(269): warning C4101: 'tp' :참조되지 않은 지역 변수입니다.
+  mySIM.vcxproj -> C:\Users\aass98998\source\repos\mySIM\Debug\mySIM.exe
+  0개 파일이 복사되었습니다.
