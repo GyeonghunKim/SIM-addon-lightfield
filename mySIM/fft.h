@@ -32,13 +32,13 @@
    Interface and usage:
    1D Fourier transform
    Use: fft(x, n, flag)
-	  x    : an array of structure type complex;
+	  x    : an array of structure type fft_complex;
 	  n    : the size of data, must be a power of 2;
 	  flag : 1 for forward transform, -1 for inverse transform.
 
    3D Fourier transform
    Use :  fft3D(x, n1, n2, n3, flag)
-	 x    : 1D array of type complex representing 3D array;
+	 x    : 1D array of type fft_complex representing 3D array;
 			mapping through C convention, i.e.,
 			(i,j,k) -> k + n3*j + n2*n3*i;
 	 n1, n2, n3 : dimensions in three directions;
@@ -51,27 +51,28 @@
 
 /* Data type and new names for flexibility:
 
-	real:    Basic data type for floating point computations
-			 (typedef double  real;)
-	complex: Structure for complex numbers, real and imaginary parts
+	fft_real:    Basic data type for floating point computations
+			 (typedef double  fft_real;)
+	fft_complex: Structure for fft_complex numbers, fft_real and imaginary parts
 			 are referred as c.Re, c.Im.
-			 (typedef struct { real Re; real Im; }  complex;)
+			 (typedef struct { fft_real Re; fft_real Im; }  fft_complex;)
 */
 /* Inclusion of standard C libraries */
 
 #include <stdio.h>
+#include <iostream>
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
 
 
-#define  REALSIZE     8                                  /* in units of byte */
-typedef double real;                 /* can be long double, double, or float */
-typedef struct { real Re; real Im; }  complex;         /* for complex number */
+#define  fft_realSIZE     8                                  /* in units of byte */
+typedef double fft_real;                 /* can be long double, double, or float */
+typedef struct { fft_real Re; fft_real Im; }  fft_complex;         /* for fft_complex number */
 
 									 /* Mathematical functions and constants */
 #undef M_PI
-#if (REALSIZE==16)
+#if (fft_realSIZE==16)
 #define sin  sinl
 #define cos  cosl
 #define fabs  fabsl
@@ -80,9 +81,9 @@ typedef struct { real Re; real Im; }  complex;         /* for complex number */
 #define M_PI 3.1415926535897932385E0
 #endif
 
-void fft(complex x[], int n, int flag);
-void fft2D(complex x[], int n1, int n2, int flag);
-void fft3D(complex x[], int n1, int n2, int n3, int flag);
+void fft(fft_complex x[], int n, int flag);
+void fft2D(fft_complex x[], int n1, int n2, int flag);
+void fft3D(fft_complex x[], int n1, int n2, int n3, int flag);
 
 /*----------------------------------------------------------------------*/
 /* Truncated Stockham algorithm for multi-column vector,
@@ -94,12 +95,12 @@ void fft3D(complex x[], int n1, int n2, int n3, int flag);
    terminology of column or row respect to algorithms in the Loan's
    book is reversed, because we use row major convention of C.
 */
-static void stockham(complex x[], int n, int flag, int n2, complex y[])
+static void stockham(fft_complex x[], int n, int flag, int n2, fft_complex y[])
 {
-	complex* y_orig, * tmp;
+	fft_complex* y_orig, * tmp;
 	int  i, j, k, k2, Ls, r, jrs;
 	int  half, m, m2;
-	real  wr, wi, tr, ti;
+	fft_real  wr, wi, tr, ti;
 
 	y_orig = y;
 	r = half = n >> 1;
@@ -112,12 +113,12 @@ static void stockham(complex x[], int n, int flag, int n2, complex y[])
 		m = 0;                        /* m runs over first half of the array */
 		m2 = half;                             /* m2 for second half, n2=n/2 */
 		for (j = 0; j < Ls; ++j) {
-			wr = cos(M_PI * j / Ls);                   /* real and imaginary part */
+			wr = cos(M_PI * j / Ls);                   /* fft_real and imaginary part */
 			wi = -flag * sin(M_PI * j / Ls);                      /* of the omega */
 			jrs = j * (r + r);
 			for (k = jrs; k < jrs + r; ++k) {           /* "butterfly" operation */
 				k2 = k + r;
-				tr = wr * y[k2].Re - wi * y[k2].Im;      /* complex multiply, w*y */
+				tr = wr * y[k2].Re - wi * y[k2].Im;      /* fft_complex multiply, w*y */
 				ti = wr * y[k2].Im + wi * y[k2].Re;
 				x[m].Re = y[k].Re + tr;
 				x[m].Im = y[k].Im + ti;
@@ -146,12 +147,12 @@ static void stockham(complex x[], int n, int flag, int n2, complex y[])
    x[] is input data, overwritten by output, viewed as n/n2 by n2
    array. flag = 1 for forward and -1 for backward transform.
 */
-void cooley_tukey(complex x[], int n, int flag, int n2)
+void cooley_tukey(fft_complex x[], int n, int flag, int n2)
 {
-	complex c;
+	fft_complex c;
 	int i, j, k, m, p, n1;
 	int Ls, ks, ms, jm, dk;
-	real wr, wi, tr, ti;
+	fft_real wr, wi, tr, ti;
 
 	n1 = n / n2;                               /* do bit reversal permutation */
 	for (k = 0; k < n1; ++k) {        /* This is algorithms 1.5.1 and 1.5.2. */
@@ -180,7 +181,7 @@ void cooley_tukey(complex x[], int n, int flag, int n2)
 		jm = 0;                                                /* jm is j*n2 */
 		dk = p * n2;
 		for (j = 0; j < Ls; ++j) {
-			wr = cos(M_PI * j / Ls);                   /* real and imaginary part */
+			wr = cos(M_PI * j / Ls);                   /* fft_real and imaginary part */
 			wi = -flag * sin(M_PI * j / Ls);                      /* of the omega */
 			for (k = jm; k < n; k += dk) {                      /* "butterfly" */
 				ks = k + Ls * n2;
@@ -206,12 +207,12 @@ void cooley_tukey(complex x[], int n, int flag, int n2)
    Simply call stockham with proper arguments.
    Allocated working space of size n dynamically.
 */
-void fft(complex x[], int n, int flag)
+void fft(fft_complex x[], int n, int flag)
 {
-	complex* y;
+	fft_complex* y;
 
 	assert(1 == flag || -1 == flag);
-	y = (complex*)malloc(n * sizeof(complex));
+	y = (fft_complex*)malloc(n * sizeof(fft_complex));
 	assert(NULL != y);
 	stockham(x, n, flag, 1, y);
 	free(y);
@@ -228,14 +229,14 @@ void fft(complex x[], int n, int flag)
    so we take a compromise of the two.
 */
 
-void fft2D(complex x[], int n1, int n2, int flag)
+void fft2D(fft_complex x[], int n1, int n2, int flag)
 {
-	complex* y;
+	fft_complex* y;
 	int i, n;
 
 	assert(1 == flag || -1 == flag);
 	n = n1 * n2;
-	y = (complex*)malloc(n2 * sizeof(complex));
+	y = (fft_complex*)malloc(n2 * sizeof(fft_complex));
 	assert(NULL != y);
 
 	for (i = 0; i < n; i += n2) {                                  /* FFT in y */
@@ -246,9 +247,9 @@ void fft2D(complex x[], int n1, int n2, int flag)
 }
 
 
-void fftshift2D(complex x[], int n1, int n2) {
+void fftshift2D(fft_complex x[], int n1, int n2) {
 	int a = n1 / 2;
-	complex tp;
+	fft_complex tp;
 	for (int i = 0; i < a; ++i) {
 		for (int j = 0; j < n2; ++j) {
 			if (j < a) {
@@ -265,9 +266,9 @@ void fftshift2D(complex x[], int n1, int n2) {
 	}
 }
 
-void circshift2D(complex x[], int n1, int n2, int mvx, int mvy) {
-	complex tp;
-	complex* tmp = (complex*)malloc(sizeof(complex) * n1 * n2);
+void circshift2D(fft_complex x[], int n1, int n2, int mvx, int mvy) {
+	fft_complex tp;
+	fft_complex* tmp = (fft_complex*)malloc(sizeof(fft_complex) * n1 * n2);
 	for (int i = 0; i < n1; ++i) {
 		for (int j = 0; j < n2; ++j) {
 				tmp[n2 * i + j] = x[n2 * ((i + mvy)%n1) + ((j + mvx) % n2)];

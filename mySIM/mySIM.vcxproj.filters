@@ -26,5 +26,8 @@
     <ClInclude Include="fft_test.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="EigenTest.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
